@@ -58,6 +58,7 @@ if st.button("Analyze Risk"):
                     "geometry": f"{lon},{lat}",
                     "geometryType": "esriGeometryPoint",
                     "spatialRel": "esriSpatialRelIntersects",
+                    "inSR": "4326",
                     "outFields": "bws_cat", # Pulls the text category (e.g., "Extremely High")
                     "returnGeometry": "false",
                     "f": "pjson"
