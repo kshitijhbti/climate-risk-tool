@@ -28,24 +28,40 @@ if st.button("Analyze Risk"):
             lon = location.longitude
             st.success(f"Location Identified: {location.place_name}, {location.state_name}")
             
-            # 4. Fetch Data from NASA POWER API (Long-term averages)
-            # T2M_MAX stands for Maximum Temperature at 2 Meters
-            url = f"https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M_MAX&community=RE&longitude={lon}&latitude={lat}&format=JSON"
+# --- MODULE 1: EXTREME HEAT BASELINE (NEW) ---
+            st.markdown("---")
+            st.subheader("Module 1: Extreme Heat Baseline (Days > 40°C)")
             
-            try:
-                response = requests.get(url)
-                data = response.json()
+            with st.spinner("Fetching historical daily temperature data..."):
+                # Open-Meteo Historical API (Baseline Year: 2023)
+                heat_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date=2023-01-01&end_date=2023-12-31&daily=temperature_2m_max"
                 
-                # Extract the Annual Average Maximum Temperature
-                annual_max_temp = data['properties']['parameter']['T2M_MAX']['ANN']
-                
-                # 5. Display the Results beautifully
-                st.metric(label="Historical Annual Avg. Max Temperature", value=f"{annual_max_temp}°C")
-                
-                st.info("Data Source: NASA Prediction of Worldwide Energy Resources (POWER). This represents the 30-year historical baseline.")
-                
-            except Exception as e:
-                st.error("Could not connect to NASA databases at this time.")
+                try:
+                    heat_response = requests.get(heat_url)
+                    heat_data = heat_response.json()
+                    
+                    if "error" in heat_data:
+                        st.error("Error fetching historical heat data.")
+                    else:
+                        daily_max_temps = heat_data['daily']['temperature_2m_max']
+                        valid_temps = [t for t in daily_max_temps if t is not None]
+                        
+                        # Calculate days exceeding 40 Celsius
+                        extreme_heat_days = sum(1 for t in valid_temps if t > 40)
+                        
+                        st.metric(label="Days Exceeding 40°C (Recent Baseline)", value=f"{extreme_heat_days} days")
+                        
+                        if extreme_heat_days > 30:
+                            st.error("**High Heat Risk:** Sustained periods of extreme heat threatening labor productivity and cooling infrastructure.")
+                        elif extreme_heat_days > 10:
+                            st.warning("**Moderate Heat Risk:** Notable exposure to extreme heat events.")
+                        else:
+                            st.success("**Low Heat Risk:** Limited exposure to temperatures exceeding 40°C.")
+                            
+                        st.info("Data Source: Open-Meteo Historical Archive. 40°C is a standard threshold for assessing severe occupational heat stress.")
+                        
+                except Exception as e:
+                    st.warning("Could not connect to historical temperature database.")
 
 # --- MODULE 2: FUTURE CLIMATE PROJECTIONS (2050) ---
             st.markdown("---")
