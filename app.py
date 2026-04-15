@@ -54,6 +54,7 @@ if st.button("Analyze Risk"):
             with st.spinner("Fetching spatial data from World Resources Institute..."):
                 # WRI Aqueduct ArcGIS REST API endpoint
                 wri_url = "https://gis.wri.org/server/rest/services/Aqueduct30/aqueduct_results_v01/MapServer/0/query"
+                bbox = f"{lon-0.01},{lat-0.01},{lon+0.01},{lat+0.01}"
                 wri_params = {
                     "geometry": f"{lon},{lat}",
                     "geometryType": "esriGeometryPoint",
