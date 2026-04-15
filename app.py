@@ -74,3 +74,46 @@ if st.button("Analyze Risk"):
                         
                 except Exception as e:
                     st.warning("Could not connect to Open-Meteo Climate database at this time.")
+
+# --- MODULE 3: ACUTE RISK - EXTREME PRECIPITATION ---
+            st.markdown("---")
+            st.subheader("Module 3: Acute Flood Risk (Extreme Rainfall)")
+            
+            with st.spinner("Fetching historical precipitation data..."):
+                # Open-Meteo Historical API (Last full calendar year: 2023)
+                precip_url = f"https://archive-api.open-meteo.com/v1/archive?latitude={lat}&longitude={lon}&start_date=2023-01-01&end_date=2023-12-31&daily=precipitation_sum"
+                
+                try:
+                    precip_response = requests.get(precip_url)
+                    precip_data = precip_response.json()
+                    
+                    if "error" in precip_data:
+                        st.error("Error fetching precipitation data.")
+                    else:
+                        # Extract the daily rainfall totals for the whole year
+                        daily_rain = precip_data['daily']['precipitation_sum']
+                        valid_rain = [r for r in daily_rain if r is not None]
+                        
+                        # Calculate key flood risk metrics
+                        max_single_day_rain = max(valid_rain)
+                        heavy_rain_days = sum(1 for r in valid_rain if r > 50) # Days over 50mm
+                        
+                        # Display metrics side-by-side
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric(label="Max Single-Day Rainfall (2023)", value=f"{max_single_day_rain:.1f} mm")
+                        with col2:
+                            st.metric(label="Days with Heavy Rain (>50mm)", value=f"{heavy_rain_days} days")
+                            
+                        # Add automated risk assessment logic
+                        if max_single_day_rain > 100:
+                            st.error("**High Flood Risk:** Location experiences extreme single-day rainfall events capable of severe inundation.")
+                        elif max_single_day_rain > 50:
+                            st.warning("**Moderate Flood Risk:** Location experiences heavy rainfall capable of overwhelming urban drainage.")
+                        else:
+                            st.success("**Low Flood Risk:** No extreme single-day rainfall events recorded in the baseline year.")
+                            
+                        st.info("Data Source: Open-Meteo Historical Archive. Note: In Indian metros, >50mm of rain in a single day typically overwhelms municipal drainage infrastructure.")
+                        
+                except Exception as e:
+                    st.warning("Could not connect to precipitation database at this time.")
