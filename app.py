@@ -46,3 +46,42 @@ if st.button("Analyze Risk"):
                 
             except Exception as e:
                 st.error("Could not connect to NASA databases at this time.")
+
+# --- MODULE 2: WRI AQUEDUCT WATER STRESS ---
+            st.markdown("---")
+            st.subheader("Module 2: Baseline Water Stress")
+            
+            with st.spinner("Fetching spatial data from World Resources Institute..."):
+                # WRI Aqueduct ArcGIS REST API endpoint
+                wri_url = "https://gis.wri.org/server/rest/services/Aqueduct30/aqueduct_results_v01/MapServer/0/query"
+                wri_params = {
+                    "geometry": f"{lon},{lat}",
+                    "geometryType": "esriGeometryPoint",
+                    "spatialRel": "esriSpatialRelIntersects",
+                    "outFields": "bws_cat", # Pulls the text category (e.g., "Extremely High")
+                    "returnGeometry": "false",
+                    "f": "pjson"
+                }
+                
+                try:
+                    wri_response = requests.get(wri_url, params=wri_params)
+                    wri_data = wri_response.json()
+                    
+                    # Extract the water stress category from the JSON response
+                    if 'features' in wri_data and len(wri_data['features']) > 0:
+                        water_stress = wri_data['features'][0]['attributes']['bws_cat']
+                        
+                        # Add a visual color cue based on the severity
+                        if "Extremely High" in water_stress:
+                            st.error(f"**Baseline Water Stress:** {water_stress}")
+                        elif "High" in water_stress:
+                            st.warning(f"**Baseline Water Stress:** {water_stress}")
+                        else:
+                            st.success(f"**Baseline Water Stress:** {water_stress}")
+                            
+                        st.info("Data Source: WRI Aqueduct 3.0. Assesses the ratio of total water withdrawals to available renewable surface and groundwater supplies.")
+                    else:
+                        st.write("WRI Data not available for these exact coordinates.")
+                        
+                except Exception as e:
+                    st.warning("Could not connect to WRI Aqueduct database at this time.")
