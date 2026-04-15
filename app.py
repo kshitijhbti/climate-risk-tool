@@ -83,7 +83,7 @@ if st.button("Analyze Risk"):
                             
                         st.info("Data Source: WRI Aqueduct 3.0. Assesses the ratio of total water withdrawals to available renewable surface and groundwater supplies.")
                     else:
-                        st.write("WRI Data not available for these exact coordinates.")
-                        
+                        st.warning("Data not found. Here is the exact response from the WRI server:")
+                        st.json(wri_data)
                 except Exception as e:
                     st.warning("Could not connect to WRI Aqueduct database at this time.")
