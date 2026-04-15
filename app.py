@@ -47,43 +47,30 @@ if st.button("Analyze Risk"):
             except Exception as e:
                 st.error("Could not connect to NASA databases at this time.")
 
-# --- MODULE 2: WRI AQUEDUCT WATER STRESS ---
+# --- MODULE 2: FUTURE CLIMATE PROJECTIONS (2050) ---
             st.markdown("---")
-            st.subheader("Module 2: Baseline Water Stress")
+            st.subheader("Module 2: Future Heat Projections (Year 2050)")
             
-            with st.spinner("Fetching spatial data from World Resources Institute..."):
-                # WRI Aqueduct ArcGIS REST API endpoint
-                wri_url = "https://gis.wri.org/server/rest/services/Aqueduct30/aqueduct_results_v01/MapServer/0/query"
-                bbox = f"{lon-0.01},{lat-0.01},{lon+0.01},{lat+0.01}"
-                wri_params = {
-                    "geometry": f"{lon},{lat}",
-                    "geometryType": "esriGeometryPoint",
-                    "spatialRel": "esriSpatialRelIntersects",
-                    "inSR": "4326",
-                    "outFields": "bws_cat", # Pulls the text category (e.g., "Extremely High")
-                    "returnGeometry": "false",
-                    "f": "pjson"
-                }
+            with st.spinner("Fetching CMIP6 climate models..."):
+                # Open-Meteo Climate API (100% Free, No Keys Required)
+                climate_url = f"https://climate-api.open-meteo.com/v1/climate?latitude={lat}&longitude={lon}&start_date=2050-01-01&end_date=2050-12-31&models=MRI_AGCM3_2_S&daily=temperature_2m_max"
                 
                 try:
-                    wri_response = requests.get(wri_url, params=wri_params)
-                    wri_data = wri_response.json()
+                    climate_response = requests.get(climate_url)
+                    climate_data = climate_response.json()
                     
-                    # Extract the water stress category from the JSON response
-                    if 'features' in wri_data and len(wri_data['features']) > 0:
-                        water_stress = wri_data['features'][0]['attributes']['bws_cat']
-                        
-                        # Add a visual color cue based on the severity
-                        if "Extremely High" in water_stress:
-                            st.error(f"**Baseline Water Stress:** {water_stress}")
-                        elif "High" in water_stress:
-                            st.warning(f"**Baseline Water Stress:** {water_stress}")
-                        else:
-                            st.success(f"**Baseline Water Stress:** {water_stress}")
-                            
-                        st.info("Data Source: WRI Aqueduct 3.0. Assesses the ratio of total water withdrawals to available renewable surface and groundwater supplies.")
+                    if "error" in climate_data:
+                        st.error("Error fetching climate projections.")
                     else:
-                        st.warning("Data not found. Here is the exact response from the WRI server:")
-                        st.json(wri_data)
+                        # Extract the daily max temperatures for the 365 days in 2050
+                        temps_2050 = climate_data['daily']['temperature_2m_max']
+                        
+                        # Calculate the projected average max temperature
+                        valid_temps = [t for t in temps_2050 if t is not None]
+                        avg_temp_2050 = sum(valid_temps) / len(valid_temps)
+                        
+                        st.metric(label="Projected Annual Avg. Max Temperature (2050)", value=f"{avg_temp_2050:.2f}°C")
+                        st.info("Data Source: Open-Meteo Climate API. Projections derived from CMIP6 Models (MRI-AGCM3-2-S) forecasting long-term shifts.")
+                        
                 except Exception as e:
-                    st.warning("Could not connect to WRI Aqueduct database at this time.")
+                    st.warning("Could not connect to Open-Meteo Climate database at this time.")
